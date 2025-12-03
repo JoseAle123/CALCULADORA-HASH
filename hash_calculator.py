@@ -35,7 +35,7 @@ class HashCalculator:
 
     @staticmethod
     def _right_rotate_64(n, b, bits=64):
-        b &= 63   # ← IMPORTANTE FIX
+        b &= 63 
         n &= (2**bits - 1)
         return ((n >> b) | (n << (bits - b))) & (2**bits - 1)
     
@@ -47,15 +47,12 @@ class HashCalculator:
         
         while (len(message_bytes) * 8) % 512 != 448:
             message_bytes += b'\x00'
-        
-        # Longitud en Little-Endian (<Q)
         message_bytes += struct.pack('<Q', msg_len * 8) 
         return message_bytes
     
     @staticmethod
     def _sigma0_512(x):
         """Función de expansión de mensaje sigma_0 (64 bits)"""
-        # ROTR^1(x) XOR ROTR^8(x) XOR SHR^7(x)
         r1 = HashCalculator._right_rotate_64(x, 1)
         r8 = HashCalculator._right_rotate_64(x, 8)
         s7 = x >> 7
@@ -64,7 +61,6 @@ class HashCalculator:
     @staticmethod
     def _sigma1_512(x):
         """Función de expansión de mensaje sigma_1 (64 bits)"""
-        # ROTR^19(x) XOR ROTR^61(x) XOR SHR^6(x)
         r19 = HashCalculator._right_rotate_64(x, 19)
         r61 = HashCalculator._right_rotate_64(x, 61)
         s6 = x >> 6
@@ -73,7 +69,6 @@ class HashCalculator:
     @staticmethod
     def _sum0_512(x):
         """Función de compresión sumatoria Sigma_0 (64 bits)"""
-        # ROTR^28(x) XOR ROTR^34(x) XOR ROTR^39(x)
         r28 = HashCalculator._right_rotate_64(x, 28)
         r34 = HashCalculator._right_rotate_64(x, 34)
         r39 = HashCalculator._right_rotate_64(x, 39)
@@ -82,7 +77,6 @@ class HashCalculator:
     @staticmethod
     def _sum1_512(x):
         """Función de compresión sumatoria Sigma_1 (64 bits)"""
-        # ROTR^14(x) XOR ROTR^18(x) XOR ROTR^41(x)
         r14 = HashCalculator._right_rotate_64(x, 14)
         r18 = HashCalculator._right_rotate_64(x, 18)
         r41 = HashCalculator._right_rotate_64(x, 41)
@@ -94,13 +88,11 @@ class HashCalculator:
         msg_len = len(message_bytes)
         message_bytes += b'\x80'
         
-        # 512 bits (64 bytes) - 64 bits (8 bytes) de longitud = 448 bits
         len_in_bytes = block_size - len_size
         
         while len(message_bytes) % block_size != len_in_bytes:
             message_bytes += b'\x00'
         
-        # Longitud en Big-Endian (>Q)
         message_bytes += struct.pack('>Q', msg_len * 8) 
         return message_bytes
 
@@ -109,17 +101,13 @@ class HashCalculator:
         """Padding para SHA-384/512 (Bloque de 128 bytes, longitud de 16 bytes, Big-Endian)"""
         msg_len = len(message_bytes)
         message_bytes += b'\x80'
-        
-        # 1024 bits (128 bytes) - 128 bits (16 bytes) de longitud = 896 bits
+  
         while len(message_bytes) % 128 != 112:
             message_bytes += b'\x00'
-        
-        # Longitud en 128 bits (16 bytes), Big-Endian (>QQ)
         message_bytes += struct.pack('>Q', 0)
         message_bytes += struct.pack('>Q', msg_len * 8)
         return message_bytes
     
-    # --- Implementaciones ---
 
     def md5(self, message):
         """Implementación de MD5"""
@@ -166,13 +154,10 @@ class HashCalculator:
         h0, h1, h2, h3, h4 = (0x67452301, 0xEFCDAB89, 0x98BADCFE, 
                               0x10325476, 0xC3D2E1F0)
         K = [0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6]
-        
-        # CORRECCIÓN: Usar padding Big-Endian
         message_bytes = self._padding_sha_simple(message.encode('utf-8'), block_size=64, len_size=8)
         
         for offset in range(0, len(message_bytes), 64):
             block = message_bytes[offset:offset + 64]
-            # SHA-1 siempre usa Big-Endian
             W = list(struct.unpack('>16I', block))
             
             for i in range(16, 80):
@@ -221,7 +206,6 @@ class HashCalculator:
             0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
         ]
         
-        # Usar padding Big-Endian
         message_bytes = self._padding_sha_simple(message_bytes, block_size=64, len_size=8)
         
         for offset in range(0, len(message_bytes), 64):
@@ -263,13 +247,13 @@ class HashCalculator:
         message_bytes = self._padding_md5_md4(message.encode('utf-8'))
         
         for offset in range(0, len(message_bytes), 64):
-            # ... (Lógica MD4. Se asume correcta) ...
+            
             block = message_bytes[offset:offset + 64]
             M = list(struct.unpack('<16I', block))
             
             AA, BB, CC, DD = A, B, C, D
             
-            # Round 1
+          
             indices_r1 = list(range(16))
             shifts_r1 = [3, 7, 11, 19] * 4
             for i in range(16):
@@ -284,7 +268,7 @@ class HashCalculator:
                 else:
                     B = self._left_rotate((B + F(C, D, A) + M[idx]) & 0xFFFFFFFF, shift)
             
-            # Round 2
+          
             indices_r2 = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15]
             shifts_r2 = [3, 5, 9, 13] * 4
             K2 = 0x5A827999
@@ -300,7 +284,7 @@ class HashCalculator:
                 else:
                     B = self._left_rotate((B + G(C, D, A) + M[idx] + K2) & 0xFFFFFFFF, shift)
             
-            # Round 3
+        
             indices_r3 = [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15]
             shifts_r3 = [3, 9, 11, 15] * 4
             K3 = 0x6ED9EBA1
@@ -331,18 +315,10 @@ class HashCalculator:
     def _sha512_padding(message_bytes):
         msg_len = len(message_bytes)
         bit_len = msg_len * 8
-
-        # 1) copy to avoid mutation bugs
         m = bytearray(message_bytes)
-
-        # 2) append 0x80
         m.append(0x80)
-
-        # 3) pad with zeros until length ≡ 112 mod 128
         while (len(m) % 128) != 112:
             m.append(0)
-
-        # 4) append 128-bit length (big endian)
         m += struct.pack('>QQ', 0, bit_len)
 
         return bytes(m)
@@ -368,24 +344,20 @@ class HashCalculator:
         if isinstance(message, str):
             message = message.encode('utf-8')
 
-        # Padding SHA-512 (big-endian length, 128-byte blocks)
         msg_len_bits = len(message) * 8
         m = bytearray(message)
         m.append(0x80)
         while (len(m) % 128) != 112:
             m.append(0)
-        # 128-bit length: high 64 bits = 0, low 64 bits = bit length
+       
         m += struct.pack('>QQ', 0, msg_len_bits)
         message_bytes = bytes(m)
 
-        # Initial IV for SHA-384
         h = [
             0xcbbb9d5dc1059ed8, 0x629a292a367cd507, 0x9159015a3070dd17,
             0x152fecd8f70e5939, 0x67332667ffc00b31, 0x8eb44a8768581511,
             0xdb0c2e0d64f98fa7, 0x47b5481dbefa4fa4
         ]
-
-        # SHA-512 constants (correct 80 entries)
         k = [
             0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc,
             0x3956c25bf348b538, 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118,
@@ -411,7 +383,6 @@ class HashCalculator:
 
         MASK = 0xFFFFFFFFFFFFFFFF
 
-        # procesar cada bloque de 128 bytes
         for i in range(0, len(message_bytes), 128):
             block = message_bytes[i:i+128]
             w = list(struct.unpack('>16Q', block))
@@ -424,13 +395,13 @@ class HashCalculator:
                     (w[t-2] >> 6))
                 w.append((w[t-16] + s0 + w[t-7] + s1) & MASK)
 
-            a, b, c, d, e, f, g, h_ = h[:]  # copia ¡importante!
+            a, b, c, d, e, f, g, h_ = h[:] 
 
             for t in range(80):
                 ch = ((e & f) ^ ((~e) & g)) & MASK
                 maj = ((a & b) ^ (a & c) ^ (b & c)) & MASK
 
-                T1 = (h_ + self._right_rotate_64(e, 14) ^ 0)  # placeholder (we compute below)
+                T1 = (h_ + self._right_rotate_64(e, 14) ^ 0) 
 
                 T1 = (h_ + self._sha512_Sigma1(e) + ch + k[t] + w[t]) & MASK
                 T2 = (self._sha512_Sigma0(a) + maj) & MASK
@@ -443,8 +414,6 @@ class HashCalculator:
                 c = b
                 b = a
                 a = (T1 + T2) & MASK
-
-            # añadir valores del bloque al estado
             h = [
                 (h[0] + a) & MASK,
                 (h[1] + b) & MASK,
@@ -455,8 +424,6 @@ class HashCalculator:
                 (h[6] + g) & MASK,
                 (h[7] + h_) & MASK
             ]
-
-        # salida SHA-384: primeros 6 palabras (48 bytes)
         return ''.join(f'{x:016x}' for x in h[:6])
     
     def hmac_sha256(self, message, key):
@@ -472,19 +439,14 @@ class HashCalculator:
         opad = bytes(x ^ 0x5C for x in key_bytes)
         
         message_bytes = message.encode('utf-8')
-
-        # Inner Hash: H((K XOR ipad) || message)
         inner_input = ipad + message_bytes
         inner_hash = self.sha256_bytes(inner_input) 
-
-        # Outer Hash: H((K XOR opad) || inner_hash_bytes)
         outer_input = opad + bytes.fromhex(inner_hash)
         outer_hash = self.sha256_bytes(outer_input) 
         
         return outer_hash
     
     def calculate_all(self, text, hmac_key=None):
-        # ... (Same as before) ...
         results = {
             'MD5': self.md5(text),
             'SHA-1': self.sha1(text),
@@ -501,7 +463,6 @@ class HashCalculator:
     def verify_with_builtin(self, text):
         """Verifica implementación contra biblioteca estándar"""
 
-        # Hashes estándar
         our_md5 = self.md5(text)
         lib_md5 = hashlib.md5(text.encode()).hexdigest()
 
@@ -514,7 +475,6 @@ class HashCalculator:
         our_sha384 = self.sha384(text)
         lib_sha384 = hashlib.sha384(text.encode()).hexdigest()
 
-        # --- MD4 usando PyCryptodome ---
         our_md4 = self.md4(text)
         try:
             lib_md4 = MD4.new(text.encode()).hexdigest()
@@ -525,7 +485,6 @@ class HashCalculator:
 
         md4_match = (our_md4 == lib_md4) if md4_supported else False
 
-        # Resultados
         verification = {
             'MD5': (our_md5 == lib_md5, "Implementación correcta" if our_md5 == lib_md5 else f"ERROR: No coincide. Lib: {lib_md5}"),
             'SHA-1': (our_sha1 == lib_sha1, "Implementación correcta" if our_sha1 == lib_sha1 else f"ERROR: No coincide. Lib: {lib_sha1}"),
@@ -535,7 +494,6 @@ class HashCalculator:
             'SHA384': (our_sha384 == lib_sha384, "Implementación correcta" if our_sha384 == lib_sha384 else f"ERROR: No coincide. Lib: {lib_sha384}"),
         }
 
-        # HMAC
         test_key = "test_key"
         our_hmac = self.hmac_sha256(text, test_key)
         lib_hmac = hmac.new(test_key.encode(), text.encode(), hashlib.sha256).hexdigest()
